@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SOC Defense – Cyber Base</title>
+<style>
+  :root{--bg:#0b1020; --panel:#121a33; --card:#17213f; --text:#e5e7eb; --accent:#7dd3fc; --ok:#34d399; --warn:#fbbf24; --bad:#f87171}
+  *{box-sizing:border-box}
+  body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",sans-serif; background:linear-gradient(180deg,#0a0f22,#0f1530); color:var(--text)}
+  .wrap{max-width:1080px; margin:0 auto; padding:16px}
+  header{display:flex; align-items:center; gap:12px}
+  h1{font-size:clamp(18px,3.2vw,30px); margin:0}
+  .grid{display:grid; grid-template-columns: 820px 1fr; gap:12px; margin-top:12px}
+  #canvas{background:#0b1329; border:1px solid #223059; border-radius:12px; width:820px; height:520px; display:block}
+  .side{background:var(--panel); border:1px solid #223059; border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:8px}
+  .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .btn{padding:8px 10px; background:#0f1a3b; border:1px solid #2a3a6d; color:var(--text); border-radius:10px; cursor:pointer}
+  .btn:disabled{opacity:.5; cursor:not-allowed}
+  .btn.primary{background:#1d4ed8; border-color:#1e40af}
+  .btn.ok{background:#0f766e}
+  .btn.warn{background:#b45309}
+  .badge{background:#0b1329; border:1px solid #223059; padding:6px 10px; border-radius:999px; font-size:13px}
+  .slotHint{font-size:12px; opacity:.85}
+  .tip{font-size:12px; opacity:.85; line-height:1.35}
+  .sep{height:1px; background:#223059; margin:6px 0}
+  details{background:#0b1329; border:1px solid #223059; padding:8px; border-radius:10px}
+  summary{cursor:pointer}
+  .chips{display:flex; gap:6px; flex-wrap:wrap}
+  .chip{font-size:11px; padding:4px 8px; border-radius:999px; background:#0b1329; border:1px solid #223059}
+  label{font-size:12px; opacity:.9}
+  select{background:#0b1329; color:var(--text); border:1px solid #223059; border-radius:8px; padding:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div style="width:40px;height:40px;border-radius:10px;background:radial-gradient(circle at 30% 30%,#2dd4bf,#1e3a8a);"></div>
+    <h1>SOC Defense – Cyber Base</h1>
+  </header>
+
+  <div class="grid">
+    <canvas id="canvas" width="820" height="520" aria-label="Pole gry"></canvas>
+    <div class="side" role="complementary">
+      <div class="row"><span class="badge">💰 Budżet: <b id="money">100</b></span><span class="badge">❤️ HP: <b id="hp">100</b></span></div>
+      <div class="row"><span class="badge">🌊 Fala: <b id="wave">1</b>/<span id="wavesTotal">?</span></span><span class="badge">🎖️ Ranga: <b id="rank">Rekrut</b></span></div>
+      <div class="row">
+        <label>Poziom:
+          <select id="diffSel">
+            <option value="EASY">Easy</option>
+            <option value="NORMAL" selected>Normal</option>
+            <option value="HARD">Hard</option>
+            <option value="NIGHTMARE">Nightmare</option>
+          </select>
+        </label>
+      </div>
+      <div class="sep"></div>
+      <div class="row">
+        <button class="btn primary" id="startBtn">▶️ Start gry</button>
+        <button class="btn" id="nextBtn" disabled>➡️ Następna fala</button>
+      </div>
+      <div class="row">
+        <label><input type="checkbox" id="autoChk"> Autoplay</label>
+        <label><input type="checkbox" id="verboseChk"> Verbose log</label>
+        <button class="btn" id="autoRunBtn">▶️ Auto: pełny przebieg</button>
+      </div>
+      <div class="sep"></div>
+      <div class="row">
+        <button class="btn" data-tower="FW">🧱 Firewall<br><small>20</small></button>
+        <button class="btn" data-tower="WAF">🛡️ WAF<br><small>25</small></button>
+        <button class="btn" data-tower="EDR">🧬 EDR<br><small>30</small></button>
+        <button class="btn" data-tower="MFA">🔐 MFA<br><small>20</small></button>
+        <button class="btn" data-tower="TRN">🎓 Szkolenie<br><small>15</small></button>
+        <button class="btn" data-tower="BKP">💾 Backup<br><small>25</small></button>
+      </div>
+      <div class="slotHint">Kliknij typ obrony, potem szary slot przy ścieżce, aby postawić. Każda obrona ma zasięg i skuteczność vs rodzaje ataków.</div>
+      <details>
+        <summary>📖 Skuteczności (xDMG)</summary>
+        <div class="tip">
+          <b>Firewall</b>: DDoS 1.5, Brute 1.3<br/>
+          <b>WAF</b>: DDoS 1.3, Web/Phish 1.4<br/>
+          <b>EDR</b>: USB 1.5, Ransom 1.4, Brute 1.1<br/>
+          <b>MFA</b>: Phish 1.6, Brute 1.3<br/>
+          <b>Szkolenie</b>: Phish 1.5, USB 1.2
+        </div>
+      </details>
+      <div class="sep"></div>
+      <details open>
+        <summary>🧩 Małe zmiany, duży efekt (tanie konfiguracje)</summary>
+        <div class="tip">Te akcje <b>nie stawiają wież</b>, lecz <b>obniżają skuteczność ataków</b> globalnie – często to jeden parametr w systemie.</div>
+        <div class="row">
+          <button class="btn ok" data-fix="SNMP">🔧 SNMP: zmień "public" → losowy (5)</button>
+          <button class="btn ok" data-fix="SPF">📧 SPF/DKIM/DMARC (8)</button>
+          <button class="btn ok" data-fix="AUTORUN">💻 Wyłącz AutoRun/USB (6)</button>
+          <button class="btn ok" data-fix="LOCKOUT">🔐 Blokada kont po 5 próbach (8)</button>
+          <button class="btn warn" data-fix="RLIMIT">📶 Rate‑limit/WAF rules (8)</button>
+        </div>
+        <div class="chips" id="activeFixes"></div>
+        <div class="tip">Przykład: <i>zmiana SNMP community z "public" obniża ryzyko (np. CVSS ~9.8 → ~6.3)</i> – w grze: mniejszy dmg BRUTE/rekonesans.</div>
+      </details>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- Konfiguracja gry ---
+const $ = id => document.getElementById(id);
+const canvas = $('canvas');
+const ctx = canvas.getContext('2d');
+const UI = { money:$('money'), hp:$('hp'), wave:$('wave'), wavesTotal:$('wavesTotal'), rank:$('rank'), startBtn:$('startBtn'), nextBtn:$('nextBtn'), activeFixes:$('activeFixes'), autoChk: $('autoChk'), verboseChk:$('verboseChk'), autoRunBtn:$('autoRunBtn'), diffSel:$('diffSel') };
+
+// --- Poziomy trudności ---
+const DIFF = {
+  EASY:{ enemyHp:0.95, enemyDmg:0.9,  reward:1.1, towerDps:1.0, waveBonus:12 },
+  NORMAL:{ enemyHp:1.0, enemyDmg:1.0,  reward:1.0, towerDps:1.0, waveBonus:10 },
+  HARD:{ enemyHp:1.25, enemyDmg:1.15, reward:0.85, towerDps:0.95, waveBonus:6 },
+  NIGHTMARE:{ enemyHp:1.5, enemyDmg:1.25, reward:0.75, towerDps:0.9, waveBonus:0 }
+};
+
+const PATH = [
+  {x:40,y:260},{x:160,y:260},{x:200,y:160},{x:300,y:160},{x:360,y:260},{x:480,y:260},{x:560,y:360},{x:660,y:360},{x:760,y:280}
+];
+const CORE = {x:780,y:280,r:20};
+
+const SLOTS = [
+  {x:120,y:200},{x:240,y:210},{x:320,y:100},{x:430,y:300},{x:520,y:200},{x:620,y:420},{x:720,y:220}
+];
+
+// NERF – bazowe DPS/range
+const TOWER_STATS = {
+  FW:{name:'Firewall',  cost:20, rng:118, dps:12, eff:{DDOS:1.5, BRUTE:1.3, PHISH:0.9, USB:0.8, RANS:0.9}},
+  WAF:{name:'WAF',      cost:25, rng:118, dps:12, eff:{DDOS:1.3, BRUTE:1.0, PHISH:1.4, USB:0.8, RANS:1.0}},
+  EDR:{name:'EDR',      cost:30, rng:112, dps:16, eff:{USB:1.5, RANS:1.4, BRUTE:1.1, PHISH:0.9, DDOS:0.6}},
+  MFA:{name:'MFA',      cost:20, rng:118, dps:12, eff:{PHISH:1.6, BRUTE:1.3, RANS:0.9, DDOS:0.6, USB:0.7}},
+  TRN:{name:'Szkolenie',cost:15, rng:116, dps:10, eff:{PHISH:1.5, USB:1.2, BRUTE:1.0, DDOS:0.7, RANS:0.7}},
+  BKP:{name:'Backup',   cost:25, rng:90,  dps:0,  eff:{RANS:2.0}}
+};
+
+const WAVES = [
+  [{type:'PHISH', n:6, hp:18, spd:0.78, reward:3}],
+  [{type:'PHISH', n:6, hp:26, spd:0.92, reward:3},{type:'USB', n:3, hp:48, spd:0.82, reward:4}],
+  [{type:'DDOS', n:10, hp:26, spd:1.05, reward:2}],
+  [{type:'BRUTE', n:6, hp:42, spd:0.92, reward:3},{type:'PHISH', n:6, hp:28, spd:0.97, reward:3}],
+  [{type:'RANS', n:4, hp:98, spd:0.8, reward:6}],
+  [{type:'DDOS', n:8, hp:28, spd:1.08, reward:2},{type:'USB', n:5, hp:58, spd:0.92, reward:4},{type:'PHISH', n:6, hp:30, spd:1.02, reward:3}]
+];
+UI.wavesTotal.textContent = WAVES.length;
+
+// --- Stan gry ---
+let state = {
+  running:false,
+  money:100,
+  hp:100,
+  waveIdx:0,
+  enemies:[],
+  towers:[],
+  spawnQueue:[],
+  selectedTowerType:null,
+  fixes:{},
+  dmgMods:{PHISH:1, USB:1, DDOS:1, BRUTE:1, RANS:1},
+  hpMods:{PHISH:1, USB:1, DDOS:1, BRUTE:1, RANS:1},
+  lastTime:0,
+  diff:'NORMAL',
+  // Auto/Telemetry
+  auto:{enabled:false, verbose:false, fullRun:false},
+  telemetry:{
+    leaksByType:{PHISH:0,USB:0,DDOS:0,BRUTE:0,RANS:0},
+    kills:0,
+    dmgDone:0,
+    waveReports:[]
+  }
+};
+
+// --- Narzędzia ---
+function dist(a,b){const dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx,dy)}
+function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
+function rankFromHPandWave(hp,w){ if(w>4&&hp>60) return 'Specjalista'; if(w>2&&hp>40) return 'Kadet'; return 'Rekrut'; }
+function log(...args){ if(state.auto.verbose) console.log('[AUTO]',...args); }
+
+// --- Rysowanie ---
+function drawPath(){
+  ctx.strokeStyle = '#2dd4bf'; ctx.lineWidth = 8; ctx.lineJoin='round';
+  ctx.beginPath(); ctx.moveTo(PATH[0].x, PATH[0].y); for(let i=1;i<PATH.length;i++) ctx.lineTo(PATH[i].x, PATH[i].y); ctx.stroke();
+  ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.arc(CORE.x, CORE.y, CORE.r, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font='12px system-ui'; ctx.fillText('CORE', CORE.x-16, CORE.y+4);
+}
+function drawSlots(){ for(const s of SLOTS){ ctx.fillStyle = '#0b172f'; ctx.strokeStyle='#33406e'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(s.x, s.y, 16, 0, Math.PI*2); ctx.fill(); ctx.stroke(); } }
+function drawTower(t){ ctx.save(); ctx.translate(t.x,t.y); ctx.globalAlpha=0.07; ctx.fillStyle='#93c5fd'; ctx.beginPath(); ctx.arc(0,0,t.rng,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1; ctx.fillStyle = t.color; ctx.strokeStyle='#1f2937'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,0,14,0,Math.PI*2); ctx.fill(); ctx.stroke(); ctx.fillStyle='#fff'; ctx.font='10px system-ui'; ctx.textAlign='center'; ctx.fillText(t.code,0,3); ctx.restore(); }
+function drawEnemy(e){ const colors = {PHISH:'#60a5fa', USB:'#a78bfa', DDOS:'#f87171', BRUTE:'#fbbf24', RANS:'#34d399'}; const base = colors[e.type]||'#e5e7eb'; ctx.fillStyle = base; ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI*2); ctx.fill(); if(e.hit>0){ ctx.strokeStyle='#ffffff'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(e.x,e.y,e.r+2,0,Math.PI*2); ctx.stroke(); } ctx.fillStyle = '#0b0f1e'; ctx.font='10px system-ui'; ctx.textAlign='center'; ctx.fillText(e.type, e.x, e.y+3); ctx.fillStyle='#111827'; ctx.fillRect(e.x-16, e.y-18, 32, 4); ctx.fillStyle='#10b981'; ctx.fillRect(e.x-16, e.y-18, 32*Math.max(0,e.hp)/e.maxhp, 4); }
+
+// --- Logika ---
+function createEnemy(spec){ const scale = DIFF[state.diff].enemyHp; const baseMax = spec.hp * (state.hpMods[spec.type]||1) * scale; return { type:spec.type, maxhp:baseMax, hp:baseMax, spd:spec.spd, r:12, pathIdx:0, x:PATH[0].x, y:PATH[0].y, reward:Math.max(1, Math.round((spec.reward||1) * DIFF[state.diff].reward)), alive:true, slow:0, hit:0 }; }
+
+function spawnWave(){ const packs = WAVES[state.waveIdx]; state.spawnQueue = []; packs.forEach(pack=>{ for(let i=0;i<pack.n;i++){ state.spawnQueue.push({...pack}); } }); for(let i=state.spawnQueue.length-1;i>0;i--){ const j=Math.floor(Math.random()* (i+1)); [state.spawnQueue[i],state.spawnQueue[j]]=[state.spawnQueue[j],state.spawnQueue[i]] } }
+
+let spawnTimer=0; function trySpawn(dt){ if(state.spawnQueue.length===0) return; spawnTimer+=dt; if(spawnTimer>900){ const spec = state.spawnQueue.shift(); state.enemies.push(createEnemy(spec)); spawnTimer=0; } }
+
+function moveEnemies(dt){ const speedScale = dt/16; for(const e of state.enemies){ if(!e.alive) continue; if(e.slow>0) e.slow = Math.max(0, e.slow - dt); if(e.hit>0) e.hit = Math.max(0, e.hit - dt); let target = PATH[e.pathIdx+1]; if(!target){ e.alive=false; let dmg = {PHISH:5, USB:8, DDOS:9, BRUTE:8, RANS:18}[e.type]||6; dmg = Math.ceil(dmg * (state.dmgMods[e.type]||1) * DIFF[state.diff].enemyDmg); if(e.type==='RANS' && state.towers.some(t=>t.code==='BKP')) dmg = Math.ceil(dmg*0.4); state.hp = clamp(state.hp - dmg, 0, 100); UI.hp.textContent = state.hp; UI.rank.textContent = rankFromHPandWave(state.hp, state.waveIdx+1); state.telemetry.leaksByType[e.type] = (state.telemetry.leaksByType[e.type]||0)+1; continue; } const dx = target.x - e.x, dy = target.y - e.y; const len = Math.hypot(dx,dy); if(len<1){ e.pathIdx++; } else { const slowFactor = e.slow>0 ? 0.7 : 1.0; e.x += (dx/len) * e.spd * slowFactor * 60/100 * speedScale * 2; e.y += (dy/len) * e.spd * slowFactor * 60/100 * speedScale * 2; } } state.enemies = state.enemies.filter(e=>e.alive && e.hp>0); }
+
+function towersAct(dt){
+  const dmult = DIFF[state.diff].towerDps;
+  for(const t of state.towers){
+    let target=null, best=0;
+    for(const e of state.enemies){
+      const d = dist(t,e);
+      if(d<=t.rng){
+        const eff = (t.eff[e.type]||1.0);
+        const score = eff * (1 + e.pathIdx*0.1);
+        if(score>best){ best=score; target=e; }
+      }
+    }
+    if(target){
+      const eff = (t.eff[target.type]||1.0);
+      const dpsEff = t.dps * eff * dmult;
+      const dmg = dpsEff * (dt/1000);
+      target.hp -= dmg;
+      state.telemetry.dmgDone += dmg;
+      target.hit = 120;
+      if(t.code==='TRN' || t.code==='MFA'){ target.slow = Math.max(target.slow, 1200); }
+      ctx.strokeStyle = '#7dd3fc'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(t.x,t.y); ctx.lineTo(target.x,target.y); ctx.stroke();
+      if(target.hp<=0){ target.alive=false; state.money += Math.floor(target.reward); UI.money.textContent = state.money; state.telemetry.kills++; }
+    }
+  }
+}
+
+// --- Pętla ---
+function draw(){ ctx.clearRect(0,0,canvas.width,canvas.height); ctx.strokeStyle='#0f1b3d'; ctx.lineWidth=1; ctx.beginPath(); for(let x=0;x<canvas.width;x+=40){ ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); } for(let y=0;y<canvas.height;y+=40){ ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); } ctx.stroke(); drawPath(); drawSlots(); for(const t of state.towers) drawTower(t); for(const e of state.enemies) drawEnemy(e); }
+
+function update(ts){ if(!state.running){ draw(); return; } if(!state.lastTime) state.lastTime = ts; const dt = ts - state.lastTime; state.lastTime = ts; moveEnemies(dt); towersAct(dt); trySpawn(dt); draw(); const waveEmpty = state.spawnQueue.length===0 && state.enemies.length===0; if(waveEmpty){ state.running=false; UI.nextBtn.disabled=false; UI.startBtn.disabled=true; finishWaveReport(); if(state.auto.enabled && (state.auto.fullRun || state.waveIdx < WAVES.length-1)){ setTimeout(()=>{ if(state.waveIdx >= WAVES.length-1){ gameOver(true); } else { nextWaveAuto(); } }, 300); } } if(state.hp<=0){ state.running=false; gameOver(false); } }
+
+function loop(ts){ update(ts); requestAnimationFrame(loop); } requestAnimationFrame(loop);
+
+// --- Raportowanie ---
+let waveStartSnapshot=null; function beginWaveReport(){ waveStartSnapshot = {money:state.money, hp:state.hp, idx:state.waveIdx, killsStart:state.telemetry.kills, dmgStart:state.telemetry.dmgDone, leaksStart:{...state.telemetry.leaksByType}}; }
+function finishWaveReport(){ if(!waveStartSnapshot) return; const rep = { wave: waveStartSnapshot.idx+1, moneySpent: waveStartSnapshot.money - state.money + 0, hpLost: waveStartSnapshot.hp - state.hp, kills: state.telemetry.kills - waveStartSnapshot.killsStart, dmg: +(state.telemetry.dmgDone - waveStartSnapshot.dmgStart).toFixed(1) }; const leaksEnd = state.telemetry.leaksByType; rep.leaks = {}; for(const k of Object.keys(leaksEnd)){ const before = waveStartSnapshot.leaksStart[k]||0; rep.leaks[k] = (leaksEnd[k]||0) - before; } state.telemetry.waveReports.push(rep); if(state.auto.verbose) console.table(rep); }
+
+function printSummary(){ console.log('%c=== AUTO SUMMARY ===','color:#7dd3fc'); console.log('DIFF:', state.diff); console.log('HP:', state.hp, 'Money:', state.money); console.table(state.telemetry.waveReports); console.log('Total leaks:', state.telemetry.leaksByType); console.log('Total kills:', state.telemetry.kills, 'Total dmg:', state.telemetry.dmgDone.toFixed(1)); }
+
+function gameOver(victory){ ctx.fillStyle='rgba(0,0,0,.6)'; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.fillStyle='#fff'; ctx.font='20px system-ui'; ctx.textAlign='center'; ctx.fillText(victory? 'Zwycięstwo! Chronisz CORE.':'Przegrana – CORE skompromitowany.', canvas.width/2, canvas.height/2 - 10); ctx.font='14px system-ui'; ctx.fillText('Kliknij Start gry, aby spróbować ponownie.', canvas.width/2, canvas.height/2 + 18); UI.startBtn.disabled=false; UI.nextBtn.disabled=true; if(state.auto.enabled){ printSummary(); } }
+
+// --- Interakcja ---
+const towerButtons = document.querySelectorAll('[data-tower]'); for(const b of towerButtons){ b.addEventListener('click',()=>{ state.selectedTowerType = b.getAttribute('data-tower'); towerButtons.forEach(x=>x.style.outline=''); b.style.outline='2px solid #7dd3fc'; }); }
+
+canvas.addEventListener('click', (ev)=>{ if(!state.selectedTowerType) return; const rect = canvas.getBoundingClientRect(); const mx = ev.clientX - rect.left, my = ev.clientY - rect.top; let best=null, bestD=9999; SLOTS.forEach((s)=>{ if(s.taken) return; const d = Math.hypot(mx-s.x,my-s.y); if(d<bestD){bestD=d; best=s;} }); if(!best || bestD>24) return; const code = state.selectedTowerType; const S = TOWER_STATS[code]; if(state.money < S.cost) return; placeTower(best, code); });
+
+function placeTower(slot, code){ const S = TOWER_STATS[code]; state.money -= S.cost; UI.money.textContent = state.money; slot.taken = true; const colorMap = {FW:'#60a5fa', WAF:'#93c5fd', EDR:'#a78bfa', MFA:'#34d399', TRN:'#fbbf24', BKP:'#f472b6'}; state.towers.push({x:slot.x, y:slot.y, code, kind:code, color:colorMap[code]||'#e5e7eb', rng:S.rng, dps:S.dps, eff:S.eff, cool:0}); }
+
+// --- Fixes ---
+const FIXES = { SNMP:{name:'SNMP community ≠ public', cost:5, mods:{BRUTE:0.7}}, SPF:{name:'SPF/DKIM/DMARC', cost:8, mods:{PHISH:0.6}, hpMods:{PHISH:0.95}}, AUTORUN:{name:'Wyłącz AutoRun/USB', cost:6, mods:{USB:0.6}, hpMods:{USB:0.95}}, LOCKOUT:{name:'Blokada kont (5 prób/15min)', cost:8, mods:{BRUTE:0.6}}, RLIMIT:{name:'Rate‑limit / WAF rules', cost:8, mods:{DDOS:0.75}, hpMods:{DDOS:0.95}} };
+
+function applyFix(key){ if(state.fixes[key]) return; const fx = FIXES[key]; if(state.money < fx.cost) return; state.money -= fx.cost; UI.money.textContent = state.money; state.fixes[key] = true; if(fx.mods){ Object.entries(fx.mods).forEach(([t,m])=>{ state.dmgMods[t] = +(state.dmgMods[t] * m).toFixed(3); }); } if(fx.hpMods){ Object.entries(fx.hpMods).forEach(([t,m])=>{ state.hpMods[t] = +(state.hpMods[t] * m).toFixed(3); }); } renderActiveFixes(); }
+function renderActiveFixes(){ UI.activeFixes.innerHTML = Object.keys(state.fixes).length? '' : '<span class="tip">Brak aktywnych – spróbuj kliknąć jedną z zielonych akcji powyżej.</span>'; for(const k of Object.keys(state.fixes)){ const span = document.createElement('span'); span.className='chip'; span.textContent = '✓ ' + FIXES[k].name; UI.activeFixes.appendChild(span); } }
+const fixButtons = document.querySelectorAll('[data-fix]'); for(const b of fixButtons){ b.addEventListener('click', ()=> applyFix(b.getAttribute('data-fix'))); }
+
+// --- Kontrola fal ---
+UI.startBtn.addEventListener('click', ()=>{ // reset gry
+  state.money=100; state.hp=100; state.waveIdx=0; state.enemies=[]; state.towers=[]; state.spawnQueue=[]; state.running=true; state.lastTime=0; spawnTimer=0; state.fixes={}; state.dmgMods={PHISH:1,USB:1,DDOS:1,BRUTE:1,RANS:1}; state.hpMods={PHISH:1,USB:1,DDOS:1,BRUTE:1,RANS:1};
+  state.telemetry={ leaksByType:{PHISH:0,USB:0,DDOS:0,BRUTE:0,RANS:0}, kills:0, dmgDone:0, waveReports:[] };
+  state.auto.enabled = UI.autoChk.checked; state.auto.verbose = UI.verboseChk.checked; state.diff = UI.diffSel.value;
+  UI.money.textContent=state.money; UI.hp.textContent=state.hp; UI.wave.textContent=1; UI.rank.textContent='Rekrut';
+  SLOTS.forEach(s=>delete s.taken); renderActiveFixes(); UI.startBtn.disabled=true; UI.nextBtn.disabled=true; spawnWave(); beginWaveReport(); if(state.auto.enabled) autoPlanForWave(0); });
+
+UI.nextBtn.addEventListener('click', ()=> nextWaveManual());
+function nextWaveManual(){ state.waveIdx++; if(state.waveIdx>=WAVES.length){ gameOver(true); return; } UI.wave.textContent = state.waveIdx+1; UI.nextBtn.disabled=true; state.running=true; state.lastTime=0; spawnTimer=0; spawnWave(); beginWaveReport(); if(state.auto.enabled) autoPlanForWave(state.waveIdx); state.money += DIFF[state.diff].waveBonus; UI.money.textContent = state.money; }
+function nextWaveAuto(){ nextWaveManual(); }
+
+// --- Autoplay (z limitem wydatków na falę) ---
+UI.autoRunBtn.addEventListener('click', ()=>{ UI.autoChk.checked = true; state.auto.fullRun = true; if(!state.running && state.waveIdx===0) UI.startBtn.click(); });
+
+function autoPlanForWave(idx){ log('Plan for wave', idx+1);
+  const packs = WAVES[idx]; const types = new Set(packs.map(p=>p.type));
+  const freeSlot = ()=> SLOTS.find(s=>!s.taken);
+  let budget = Math.min(state.money, 25 + idx*10); // cap wydatków na falę
+  const spend = (amt)=>{ if(state.money>=amt && budget>=amt){ state.money-=amt; budget-=amt; UI.money.textContent=state.money; return true;} return false; };
+  const placeIf = (code)=>{ const S=TOWER_STATS[code]; const s=freeSlot(); if(!s) return false; if(spend(S.cost)){ placeTower(s,code); return true;} return false; };
+  const fixIf = (key)=>{ const fx=FIXES[key]; if(spend(fx.cost)){ state.money+=fx.cost; applyFix(key); return true;} return false; };
+
+  if(idx===0){ // PHISH
+    if(placeIf('TRN')) log('Place TRN');
+    if(placeIf('MFA')) log('Place MFA');
+    if(fixIf('SPF')) log('Fix SPF');
+  }
+  if(types.has('USB')){ if(fixIf('AUTORUN')) log('Fix AUTORUN'); if(placeIf('EDR')) log('Place EDR'); }
+  if(types.has('DDOS')){ if(placeIf('FW')) log('Place FW'); if(fixIf('RLIMIT')) log('Fix RLIMIT'); if(placeIf('WAF')) log('Place WAF'); }
+  if(types.has('BRUTE')){ if(placeIf('MFA')) log('Place MFA'); if(fixIf('LOCKOUT')) log('Fix LOCKOUT'); }
+  if(types.has('RANS')){ if(!state.towers.some(t=>t.code==='BKP')){ if(placeIf('BKP')) log('Place BKP'); } if(placeIf('EDR')) log('Place EDR'); }
+}
+
+// --- "Testy" sanity (proste) ---
+(function runSelfTests(){
+  const snap=()=>({money:state.money, towers:state.towers.slice(), fixes:{...state.fixes}, dmg:{...state.dmgMods}, hp:{...state.hpMods}, diff:state.diff});
+  const restore=(s)=>{ state.money=s.money; state.towers=s.towers; state.fixes=s.fixes; state.dmgMods=s.dmg; state.hpMods=s.hp; state.diff=s.diff; };
+  const results=[]; const assert=(name,cond)=>{results.push({name,cond}); console[(cond?'log':'error')](cond?'[PASS]':'[FAIL]', name)};
+  try{
+    assert('UI elements present', !!UI.money && !!UI.hp && !!UI.wavesTotal);
+    assert('WAVES length > 0', Array.isArray(WAVES) && WAVES.length>0);
+    assert('wavesTotal shows length', UI.wavesTotal.textContent === String(WAVES.length));
+
+    // SPF reduces PHISH damage mod
+    let s=snap(); const prev = {...state.dmgMods}; state.money = 100; applyFix('SPF'); assert('SPF fix reduces PHISH dmgMod', state.dmgMods.PHISH < prev.PHISH); restore(s);
+
+    // Continuous DPS applies ~1s worth of damage
+    s=snap(); const e={x:100,y:100,type:'PHISH',hp:100,maxhp:100,spd:0.8,r:12,pathIdx:0,alive:true,slow:0,hit:0}; const t={x:100,y:100,code:'MFA',rng:200,dps:20,eff:{PHISH:1.0}}; state.enemies=[e]; state.towers=[t]; towersAct(1000); assert('Continuous DPS applies ~1s worth of damage', e.hp <= 80); restore(s);
+
+    // RLIMIT reduces DDOS mods and affects new enemy HP
+    s=snap(); state.money=100; const prevD=state.dmgMods.DDOS, prevH=state.hpMods.DDOS; applyFix('RLIMIT'); assert('RLIMIT reduces DDOS dmgMod', state.dmgMods.DDOS < prevD); assert('RLIMIT reduces DDOS hpMod', state.hpMods.DDOS < prevH); const dd=createEnemy({type:'DDOS',hp:100,spd:1,reward:0}); assert('New DDOS enemy spawns with reduced HP', dd.maxhp < 100); restore(s);
+
+    // Difficulty scaling
+    s=snap(); state.diff='NORMAL'; const nHP=createEnemy({type:'PHISH',hp:100,spd:1,reward:0}).maxhp; state.diff='HARD'; const hHP=createEnemy({type:'PHISH',hp:100,spd:1,reward:0}).maxhp; assert('HARD increases enemy HP', hHP>nHP); restore(s);
+
+    // placeTower reduces money and adds tower
+    s=snap(); state.money=100; const beforeMoney=state.money; const slot={x:200,y:200}; placeTower(slot,'FW'); assert('placeTower reduces money', state.money === beforeMoney - TOWER_STATS.FW.cost); assert('placeTower adds tower', state.towers[state.towers.length-1].code==='FW'); state.money += TOWER_STATS.FW.cost; state.towers.pop(); restore(s);
+
+    // autoPlanForWave makes at least one decision on wave 1 (with budget cap)
+    s=snap(); state.money=100; state.towers=[]; state.fixes={}; autoPlanForWave(0); const didSomething = state.towers.length>0 || Object.keys(state.fixes).length>0; assert('autoPlanForWave(1) places tower or fix', didSomething); restore(s);
+  }catch(e){ console.error('SelfTests exception', e); }
+})();
+</script>
+</body>
+</html>
